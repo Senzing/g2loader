@@ -25,7 +25,6 @@ import G2Paths
 from CompressedFile import (fileRowParser, isCompressedFile,
                             openPossiblyCompressedFile)
 from G2ConfigTables import G2ConfigTables
-from G2Health import G2Health
 from G2Project import G2Project
 
 from senzing import G2Config, G2ConfigMgr, G2Diagnostic, G2Engine, G2Exception, G2IniParams, G2Product, G2ModuleException, G2ModuleLicenseException
@@ -790,9 +789,6 @@ def startLoaderProcessAndThreads(transportThreadCount):
 
 def sendToG2(threadId_, workQueue_, numThreads_, debugTrace, threadStop, noWorkloadStats, dsrcAction):
 
-    ####global num_processed
-    ####num_processed = 0
-
     try:
         g2_engine = init_engine('pyG2Engine' + str(threadId_), g2module_params, debugTrace, prime_engine=True, add_start_time=True)
     except G2ModuleException as ex:
@@ -824,7 +820,6 @@ def sendToG2(threadId_, workQueue_, numThreads_, debugTrace, threadStop, noWorkl
             threadStop.value = 1
         pass
 
-    ####if not noWorkloadStats and num_processed > 0:
     if not noWorkloadStats and records_processed.value > 0:
         dump_workload_stats(g2_engine)
 
@@ -837,8 +832,6 @@ def sendToG2(threadId_, workQueue_, numThreads_, debugTrace, threadStop, noWorkl
 
 def g2Thread(threadId_, workQueue_, g2Engine_, threadStop, noWorkloadStats, dsrcActionArgs):
     """ g2 thread function """
-
-    ####global num_processed
 
     def parse_json(row):
         """ Parse record id and data source from a JSON record """
@@ -931,15 +924,12 @@ def g2Thread(threadId_, workQueue_, g2Engine_, threadStop, noWorkloadStats, dsrc
                         with dsrc_action_reeval_count.get_lock():
                             dsrc_action_reeval_count.value += 1
 
-        ####
-        ####num_processed += 1
-        ##
         if not noWorkloadStats:
             with records_processed.get_lock():
                 records_processed.value += 1
-        ####if not noWorkloadStats and (num_processed % (args.max_threads_per_process * args.loadOutputFrequency)) == 0:
-        if not noWorkloadStats and (records_processed.value % (args.max_threads_per_process * args.loadOutputFrequency)) == 0:
-            dump_workload_stats(g2Engine_)
+
+            if (records_processed.value % (args.max_threads_per_process * args.loadOutputFrequency)) == 0:
+                dump_workload_stats(g2Engine_)
 
         try:
 
@@ -1237,7 +1227,7 @@ def getInitialG2Config_processWrapper(returnQueue, g2module_params, g2ConfigJson
 
 def getInitialG2Config(g2module_params, g2ConfigJson):
 
-      # Get the current configuration from the database
+    # Get the current configuration from the database
     g2ConfigMgr = G2ConfigMgr()
     g2ConfigMgr.init('g2ConfigMgr', g2module_params, False)
     defaultConfigID = bytearray()
@@ -1442,7 +1432,6 @@ if __name__ == '__main__':
     time_redo = Value('d', 0)
     api_errors = Value('i', 0)
     dsrc_action_diff = Value('i', 0)
-    ####
     records_processed = Value('i', 0)
 
     # Human friendly names
@@ -1642,10 +1631,6 @@ if __name__ == '__main__':
     # If ini file isn't specified try and locate it with G2Paths
     iniFileName = pathlib.Path(G2Paths.get_G2Module_ini_path()) if not args.iniFile else pathlib.Path(args.iniFile[0]).resolve()
     G2Paths.check_file_exists_and_readable(iniFileName)
-
-    # Warn if using out dated parms
-    g2health = G2Health()
-    g2health.checkIniParams(iniFileName)
 
     # Get the INI parameters to use
     iniParamCreator = G2IniParams()
