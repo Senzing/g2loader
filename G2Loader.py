@@ -1629,6 +1629,27 @@ if __name__ == '__main__':
     else:
         errors_file = ''
 
+    #Check for iniFile
+    if args.iniFile:
+
+        iniFileName = pathlib.Path(args.iniFile[0])
+        G2Paths.check_file_exists_and_readable(iniFileName)
+        iniParamCreator = G2IniParams()
+        g2module_params = iniParamCreator.getJsonINIParams(iniFileName)
+    #Check for env config_json
+    elif os.getenv("SENZING_ENGINE_CONFIGURATION_JSON"):
+
+        print("case2")
+        g2module_params =  os.getenv("SENZING_ENGINE_CONFIGURATION_JSON")
+    #Use default configuration
+    else:
+
+        iniFileName = pathlib.Path(G2Paths.get_G2Module_ini_path())
+        G2Paths.check_file_exists_and_readable(iniFileName)
+        iniParamCreator = G2IniParams()
+        g2module_params = iniParamCreator.getJsonINIParams(iniFileName)
+
+
     # If ini file isn't specified try and locate it with G2Paths
     iniFileName = pathlib.Path(G2Paths.get_G2Module_ini_path()) if not args.iniFile else pathlib.Path(args.iniFile[0]).resolve()
     G2Paths.check_file_exists_and_readable(iniFileName)
